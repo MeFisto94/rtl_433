@@ -134,6 +134,8 @@ static data_meta_type_t dmt[DATA_COUNT] = {
       .value_release            = (value_release_fn) data_array_free },
 };
 
+int ctr = 0;
+
 static bool import_values(void *dst, void *src, int num_values, data_type_t type)
 {
     int element_size = dmt[type].array_element_size;
@@ -349,6 +351,12 @@ void data_output_print(data_output_t *output, data_t *data)
 {
     if (!output)
         return;
+    
+    if (ctr != 0) {
+        fprintf(output->file, ",");
+    }
+    ctr++;
+    
     output->print_data(output, data, NULL);
     if (output->file) {
         fputc('\n', output->file);
@@ -476,8 +484,13 @@ static void data_output_json_free(data_output_t *output)
 {
     if (!output)
         return;
-
+    fprintf(output->file, "]\n\n");
     free(output);
+}
+
+static void json_output_start(struct data_output *output, const char **fields, int num_fields)
+{
+    fprintf(output->file, "[");
 }
 
 struct data_output *data_output_json_create(FILE *file)
@@ -494,6 +507,7 @@ struct data_output *data_output_json_create(FILE *file)
     output->print_double = print_json_double;
     output->print_int    = print_json_int;
     output->output_free  = data_output_json_free;
+    output->output_start = json_output_start;
     output->file         = file;
 
     return output;
